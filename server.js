@@ -3,7 +3,12 @@ const app = express();
 const fs = require('fs');
 const path = require('path');
 const PORT = process.env.PORT || 3001;
-const notesDB = require('./db/db.json')
+const notesDB = require('./db/db.json');
+
+function randomId(){
+    return Math.floor(100000 + Math.random() * 900000);
+}
+
 
 app.use(express.static('public'));
 app.use(express.json());
@@ -26,7 +31,8 @@ app.post('/api/notes', (req, res) => {
 
     const newNote = {
         title,
-        text
+        text,
+        id: randomId()
     };
 
     notesDB.push(newNote);
@@ -34,13 +40,24 @@ app.post('/api/notes', (req, res) => {
     fs.writeFile(path.join(__dirname, 'db', 'db.json'), JSON.stringify(notesDB), (err) => {
         if (err) {
             console.error(err);
-            return res.status(500).json({ error: 'Internal Server Error' });
         }
 
         console.log('New note has been stored and saved!');
         res.json(notesDB);
     });
 });
+
+app.delete('/api/notes', (req, res) =>{
+    const noteId = req.params.id;
+    const index = notesDB.findIndex(note => note.id === noteId);
+    notesDB.splice(index, 1);
+    fs.writeFile(path.join(__dirname, 'db', 'db.json'), JSON.stringify(notesDB), (err)=>{
+        if(err){
+            console.log(err);
+        }
+        req.json(notesDB);
+    })
+})
 
 
 app.listen(PORT, () =>{
